@@ -26,15 +26,55 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    console.error(`[${new Date().toISOString()}] ${request.method} ${request.url}`, exception);
+    // Log error for debugging (but not in production for sensitive data)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[${new Date().toISOString()}] ${request.method} ${request.url}`, exception);
+    }
+
+    // User-friendly error messages
+    const userMessage = this.getUserFriendlyMessage(status, message);
 
     response.status(status).json({
       success: false,
       statusCode: status,
-      message,
+      message: userMessage,
       errors,
       timestamp: new Date().toISOString(),
       path: request.url,
     });
+  }
+
+  private getUserFriendlyMessage(status: number, originalMessage: string): string {
+    // Keep original message if it's already user-friendly
+    if (status === 400 && originalMessage.includes('validation')) {
+      return originalMessage;
+    }
+    
+    if (status === 401) {
+      if (originalMessage.includes('Invalid credentials')) {
+        return 'Email hoặc mật khẩu không đúng';
+      }
+      if (originalMessage.includes('Unauthorized') || originalMessage.includes('token')) {
+        return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại';
+      }
+      return 'Bạn chưa đăng nhập hoặc phiên đã hết hạn';
+    }
+    
+    if (status === 404) {
+      return 'Không tìm thấy tài nguyên';
+    }
+    
+    if (status === 409) {
+      if (originalMessage.includes('Email already in use')) {
+        return 'Email đã được sử dụng';
+      }
+      return 'Dữ liệu bị trùng lặp';
+    }
+    
+    if (status >= 500) {
+      return 'Lỗi server. Vui lòng thử lại sau';
+    }
+    
+    return originalMessage;
   }
 }

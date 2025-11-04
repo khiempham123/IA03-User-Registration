@@ -16,13 +16,38 @@ export default function Login() {
   const onSubmit = async (data) => {
     setLoading(true)
     try {
-      const response = await api.post('/user/login', data)
-      const { token, user } = response.data
-      login(user.email, token)
+      // Clear any old tokens before login
+      console.log('🧹 Clearing old auth data before login...')
+      sessionStorage.clear()
+      localStorage.clear()
+      
+      const response = await api.post('/auth/login', data)
+      const { accessToken, refreshToken, user } = response.data
+      
+      console.log('✅ Login response received, setting new tokens...')
+      
+      // Use new login method with separate tokens
+      login(accessToken, refreshToken, user)
+      
       addToast('Đăng nhập thành công!', 'success')
       navigate('/')
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Đăng nhập thất bại'
+      let errorMessage = 'Đăng nhập thất bại'
+      
+      if (err.response) {
+        // Server responded with error
+        errorMessage = err.response.data?.message || errorMessage
+        
+        if (err.response.status === 401) {
+          errorMessage = 'Email hoặc mật khẩu không đúng'
+        } else if (err.response.status >= 500) {
+          errorMessage = 'Lỗi server. Vui lòng thử lại sau'
+        }
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = 'Không thể kết nối đến server'
+      }
+      
       addToast(errorMessage, 'error')
       console.error('Login error:', err)
     } finally {

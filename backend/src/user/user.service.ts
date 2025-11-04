@@ -49,7 +49,13 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return { id: user._id, email: user.email, createdAt: user.createdAt };
+    return { 
+      id: user._id, 
+      email: user.email, 
+      fullName: user.fullName,
+      nights: user.nights || 0,
+      createdAt: user.createdAt 
+    };
   }
 
   async updateProfile(userId: string, updateUserDto: UpdateUserDto) {
@@ -63,6 +69,12 @@ export class UserService {
     if (!updated) {
       throw new NotFoundException('User not found');
     }
-    return { id: updated._id, email: updated.email, createdAt: updated.createdAt };
+    return { 
+      id: updated._id, 
+      email: updated.email,
+      fullName: updated.fullName,
+      nights: updated.nights || 0,
+      createdAt: updated.createdAt 
+    };
   }
 }

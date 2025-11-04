@@ -8,6 +8,19 @@ async function bootstrap() {
   dotenv.config();
   const app = await NestFactory.create(AppModule);
   
+  // Debug middleware to log all requests
+  app.use((req, res, next) => {
+    if (req.path.includes('/user/profile')) {
+      console.log('🔍 Profile request:', {
+        method: req.method,
+        path: req.path,
+        hasAuth: !!req.headers.authorization,
+        authPreview: req.headers.authorization ? req.headers.authorization.substring(0, 30) + '...' : 'none'
+      });
+    }
+    next();
+  });
+  
   // Enable CORS
   app.enableCors({ origin: true });
   

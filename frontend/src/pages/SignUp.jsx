@@ -14,17 +14,17 @@ export default function SignUp() {
   const { addToast } = useToast()
 
   const mutation = useMutation({
-    mutationFn: (data) => api.post('/user/register', data),
+    mutationFn: (data) => api.post('/auth/register', data),
     onSuccess: async (response, variables) => {
       addToast('Đăng ký thành công!', 'success')
       // Auto-login after registration
       try {
-        const loginResp = await api.post('/user/login', { 
+        const loginResp = await api.post('/auth/login', { 
           email: variables.email, 
           password: variables.password 
         })
-        const { token, user } = loginResp.data
-        login(user.email, token)
+        const { accessToken, refreshToken, user } = loginResp.data
+        login(accessToken, refreshToken, user)
         navigate('/')
       } catch (err) {
         addToast('Đăng ký thành công! Vui lòng đăng nhập.', 'warning')
@@ -32,8 +32,22 @@ export default function SignUp() {
       }
     },
     onError: (error) => {
-      const errorMessage = error.response?.data?.message || 'Đăng ký thất bại'
+      let errorMessage = 'Đăng ký thất bại'
+      
+      if (error.response) {
+        errorMessage = error.response.data?.message || errorMessage
+        
+        if (error.response.status === 409) {
+          errorMessage = 'Email đã được sử dụng'
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Lỗi server. Vui lòng thử lại sau'
+        }
+      } else if (error.request) {
+        errorMessage = 'Không thể kết nối đến server'
+      }
+      
       addToast(errorMessage, 'error')
+      console.error('Registration error:', error)
     }
   })
 

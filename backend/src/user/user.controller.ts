@@ -1,9 +1,10 @@
-import { Body, Controller, Post, Get, Put, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Post, Get, Put, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('user')
 export class UserController {
@@ -24,12 +25,14 @@ export class UserController {
   }
 
   @Get('profile')
+  @UseGuards(JwtAuthGuard)
   async getProfile(@CurrentUser() currentUser: any) {
     const user = await this.userService.getProfile(currentUser.userId);
     return { success: true, user };
   }
 
   @Put('profile')
+  @UseGuards(JwtAuthGuard)
   async updateProfile(@CurrentUser() currentUser: any, @Body() updateUserDto: UpdateUserDto) {
     const user = await this.userService.updateProfile(currentUser.userId, updateUserDto);
     return { success: true, user };
